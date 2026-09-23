@@ -413,6 +413,14 @@ class MainWindowUI {
                 if (e.key === 'Escape' && this.shortcutsPopover && this.shortcutsPopover.classList.contains('is-open')) {
                     this.hideShortcutsPopover();
                 }
+                
+                // Fallback for Ctrl+Shift+S when focused, in case globalShortcut failed to register
+                if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 's') {
+                    e.preventDefault();
+                    if (window.electronAPI && window.electronAPI.takeScreenshot) {
+                        window.electronAPI.takeScreenshot();
+                    }
+                }
             });
         }
     }

@@ -66,7 +66,13 @@ class CaptureService {
 
   async captureScreenshot(options = {}) {
     const targetDisplay = this._getTargetDisplay(options.displayId);
-    const { width, height } = targetDisplay.size || { width: 1920, height: 1080 };
+    const scaleFactor = targetDisplay.scaleFactor || 1;
+    const baseWidth = targetDisplay.size ? targetDisplay.size.width : 1920;
+    const baseHeight = targetDisplay.size ? targetDisplay.size.height : 1080;
+    
+    // Scale by scaleFactor to get native resolution on high-DPI displays
+    const width = Math.round(baseWidth * scaleFactor);
+    const height = Math.round(baseHeight * scaleFactor);
 
     const sources = await desktopCapturer.getSources({
       types: ['screen'],
@@ -77,13 +83,9 @@ class CaptureService {
       throw new Error('No screen sources available for capture');
     }
 
-    // Find source matching the target display by comparing sizes as heuristic
-    let source = sources[0];
-    const match = sources.find(s => {
-      const size = s.thumbnail.getSize();
-      return size.width === width && size.height === height;
-    });
-    if (match) source = match;
+    // Match source by display_id directly
+    let source = sources.find(s => s.display_id === targetDisplay.id.toString());
+    if (!source) source = sources[0];
 
     const image = source.thumbnail;
     if (!image) throw new Error('Failed to capture screen thumbnail');
