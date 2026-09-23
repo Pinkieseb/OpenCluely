@@ -104,13 +104,6 @@
             "x64",
             "ia32"
           ]
-        },
-        {
-          "target": "portable",
-          "arch": [
-            "x64",
-            "ia32"
-          ]
         }
       ],
       "sign": null
@@ -159,7 +152,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "perMachine": false,
+      "perMachine": true,
       "include": "scripts/post-install-nsis.nsh",
       "deleteAppDataOnUninstall": false,
       "artifactName": "OpenCluely-Setup-${version}.${ext}"

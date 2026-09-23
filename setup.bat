@@ -259,8 +259,21 @@ exit /b 0
 
 :run_app
 if "%DO_RUN%"=="1" (
-    echo Starting app
-    call npm start
+    if "%DO_BUILD%"=="1" (
+        echo Starting the installer...
+        for %%f in (dist\OpenCluely-Setup-*.exe) do (
+            echo Running %%f
+            start "" "%%f"
+            goto run_done
+        )
+        echo Could not find the installer in the dist folder.
+        echo Starting app from source instead...
+        call npm start
+        :run_done
+    ) else (
+        echo Starting app
+        call npm start
+    )
 ) else (
     echo Setup complete. Skipping run.
 )
