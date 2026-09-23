@@ -243,9 +243,11 @@ class MainWindowUI {
         setTimeout(() => {
             const commandTab = document.querySelector('.command-tab');
             if (commandTab && window.electronAPI && window.electronAPI.resizeWindow) {
-                const rect = commandTab.getBoundingClientRect();
-                const width = Math.ceil(rect.width);
-                let height = Math.ceil(rect.height);
+                // scrollWidth gives the minimum width needed to show all content without clipping,
+                // regardless of the current window/element width. This is more reliable than
+                // getBoundingClientRect().width when the element is styled to fill its parent.
+                const width = Math.ceil(commandTab.scrollWidth);
+                let height = Math.ceil(commandTab.getBoundingClientRect().height);
 
                 // If shortcuts popover is visible, extend height to fit it
                 if (this.shortcutsPopover && this.shortcutsPopover.classList.contains('is-open')) {
@@ -272,6 +274,7 @@ class MainWindowUI {
         this.micButton = document.getElementById('micButton');
     this.infoButton = document.getElementById('infoButton');
     this.shortcutsPopover = document.getElementById('shortcutsPopover');
+    this.closeButton = document.getElementById('closeButton');
 
         // NEW: Screenshot button is the first .command-item without id
         const commandItems = document.querySelectorAll('.command-item');
@@ -287,6 +290,15 @@ class MainWindowUI {
                 window.electronAPI.takeScreenshot();
             }
         });
+
+        // Close button click handler
+        if (this.closeButton) {
+            this.closeButton.addEventListener('click', () => {
+                if (window.electronAPI && window.electronAPI.quit) {
+                    window.electronAPI.quit();
+                }
+            });
+        }
 
         // Skill indicator click handler toggles DSA skill
         this.skillIndicator.addEventListener('click', () => {
@@ -366,10 +378,51 @@ class MainWindowUI {
                 setTimeout(() => {
                     const commandTab = document.querySelector('.command-tab');
                     if (commandTab && window.electronAPI && window.electronAPI.resizeWindow) {
-                        const rect = commandTab.getBoundingClientRect();
-                        window.electronAPI.resizeWindow(Math.ceil(rect.width), Math.ceil(rect.height));
+                        window.electronAPI.resizeWindow(Math.ceil(commandTab.scrollWidth), Math.ceil(commandTab.getBoundingClientRect().height));
                     }
                 }, 50);
+            });
+        }
+        
+        // Model dropdown
+        this.modelSelect = document.getElementById('modelSelector');
+        if (this.modelSelect && window.electronAPI && window.electronAPI.getGeminiModels) {
+            window.electronAPI.getGeminiModels().then(models => {
+                this.modelSelect.innerHTML = ''; // Clear "Loading..."
+                if (models.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No models found (Check API Key)';
+                    this.modelSelect.appendChild(option);
+                    return;
+                }
+                
+                models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.name.replace('models/', '');
+                    option.textContent = model.displayName || model.name;
+                    this.modelSelect.appendChild(option);
+                });
+                
+                // Set to saved model
+                if (window.electronAPI.getSettings) {
+                    window.electronAPI.getSettings().then(settings => {
+                        const savedModel = settings.llm && settings.llm.gemini && settings.llm.gemini.model ? settings.llm.gemini.model : 'gemini-3.5-flash';
+                        if (savedModel) {
+                            this.modelSelect.value = savedModel;
+                        }
+                    });
+                }
+            }).catch(e => {
+                this.modelSelect.innerHTML = '<option value="">Error loading models</option>';
+            });
+
+            this.modelSelect.addEventListener('change', (e) => {
+                const model = e.target.value;
+                if (model && window.electronAPI && window.electronAPI.setGeminiModel) {
+                    window.electronAPI.setGeminiModel(model);
+                }
+                setTimeout(() => this.resizeWindowToContent(), 50);
             });
         }
 

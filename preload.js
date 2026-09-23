@@ -41,6 +41,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   hideSettings: () => ipcRenderer.invoke('hide-settings'),
   getSettings: () => ipcRenderer.invoke('get-settings'),
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
+  getGeminiModels: () => ipcRenderer.invoke('get-gemini-models'),
+  setGeminiModel: (model) => ipcRenderer.invoke('set-gemini-model', model),
 
   // First-run onboarding
   getFirstRunStatus: () => ipcRenderer.invoke('get-first-run-status'),

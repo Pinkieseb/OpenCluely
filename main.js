@@ -391,6 +391,7 @@ class ApplicationController {
   setupGlobalShortcuts() {
     const shortcuts = {
       "CommandOrControl+Shift+S": () => this.triggerScreenshotOCR(),
+      "Alt+S": () => this.triggerScreenshotOCR(),
       "CommandOrControl+Shift+V": () => windowManager.toggleVisibility(),
       "CommandOrControl+Shift+I": () => windowManager.toggleInteraction(),
       "CommandOrControl+Shift+C": () => windowManager.switchToWindow("chat"),
@@ -459,6 +460,30 @@ class ApplicationController {
   ipcMain.handle("take-screenshot", () => this.triggerScreenshotOCR());
   ipcMain.handle("list-displays", () => captureService.listDisplays());
   ipcMain.handle("capture-area", (event, options) => captureService.captureAndProcess(options));
+  
+  // Gemini model selection handlers
+  ipcMain.handle("get-gemini-models", async () => {
+    const apiKey = require("./src/core/config").getApiKey("GEMINI");
+    if (!apiKey || apiKey === "your-api-key-here") return [];
+    try {
+      const { net } = require("electron");
+      const response = await (net.fetch || fetch)(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+      const data = await response.json();
+      if (data.models) {
+        return data.models.filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent"));
+      }
+    } catch (e) {
+      logger.error("Failed to fetch Gemini models", { error: e.message });
+    }
+    return [];
+  });
+  
+  ipcMain.handle("set-gemini-model", (event, modelName) => {
+    const config = require("./src/core/config");
+    config.set("llm.gemini.model", modelName);
+    llmService.model = modelName;
+    return true;
+  });
     
     // Provide reliable clipboard write via main process
     ipcMain.handle("copy-to-clipboard", (event, text) => {
@@ -564,15 +589,15 @@ class ApplicationController {
     ipcMain.handle("resize-window", (event, { width, height }) => {
       const mainWindow = windowManager.getWindow("main");
       if (mainWindow) {
-        // Enforce horizontal constraints: min ~one icon, max original width
+        // Only enforce a minimum width (roughly one icon); no upper cap —
+        // the toolbar content determines how wide the window should be.
         const minW = 60;
-        const maxW = windowManager.windowConfigs?.main?.width || 520;
-        const clampedWidth = Math.max(minW, Math.min(maxW, Math.round(width || minW)));
+        const clampedWidth = Math.max(minW, Math.round(width || minW));
         try {
           // Match content size to the DOM so no extra transparent area remains
           mainWindow.setContentSize(Math.max(1, clampedWidth), Math.max(1, Math.round(height)));
         } catch (e) {
-          // Fallback in case setContentSize isn’t available on some platform
+          // Fallback in case setContentSize isn't available on some platform
           mainWindow.setSize(Math.max(1, clampedWidth), Math.max(1, Math.round(height)));
         }
         logger.debug("Main window resized (content)", { width: clampedWidth, height });

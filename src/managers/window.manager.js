@@ -38,7 +38,7 @@ class WindowManager {
     
     this.windowConfigs = {
       main: {
-        width: 520,
+        width: 900,
         height: 35,
         useContentSize: true,
         file: 'index.html',
@@ -347,11 +347,11 @@ class WindowManager {
         titleBarOverlay: false,
         transparent: true,
         backgroundColor: '#00000000',
-  // Allow resizing so users can adjust width; we will lock height in handlers
-  resizable: true,
-    // Keep the original max width as cap; allow small min width so it can collapse to one icon
-    minWidth: 60,
-    maxWidth: this.windowConfigs.main.width,
+        // Allow resizing so users can adjust width; height is locked to content
+        resizable: true,
+        // Allow small min width so it can collapse to roughly one icon width
+        minWidth: 60,
+        // No maxWidth: let the window grow as large as the toolbar content needs
         minimizable: false,
         maximizable: false,
         closable: false,
@@ -376,6 +376,8 @@ class WindowManager {
         transparent: true,
         backgroundColor: '#00000000',
         resizable: true,
+        minWidth: 400,
+        minHeight: 200,
         minimizable: false,
         maximizable: false,
         closable: false,
@@ -495,10 +497,9 @@ class WindowManager {
             // Keep current content height; only apply the new width
             const [_, currentContentHeight] = window.getContentSize();
             event.preventDefault();
-            // Enforce width within min/max bounds
+            // Enforce width within min/max bounds (no upper cap — content determines width)
             const minW = 60;
-            const maxW = this.windowConfigs.main.width;
-            const desiredW = Math.max(minW, Math.min(maxW, Math.round(newBounds.width || minW)));
+            const desiredW = Math.max(minW, Math.round(newBounds.width || minW));
             window.setContentSize(desiredW, Math.max(1, currentContentHeight));
           } catch (e) {
             // Fallback: lock window height using window size
@@ -506,8 +507,7 @@ class WindowManager {
               const [__w, currentWindowHeight] = window.getSize();
               event.preventDefault();
               const minW = 60;
-              const maxW = this.windowConfigs.main.width;
-              const desiredW = Math.max(minW, Math.min(maxW, Math.round(newBounds.width || minW)));
+              const desiredW = Math.max(minW, Math.round(newBounds.width || minW));
               window.setSize(desiredW, Math.max(1, currentWindowHeight));
             } catch { /* noop */ }
           }

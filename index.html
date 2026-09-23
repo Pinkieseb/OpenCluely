@@ -9,10 +9,11 @@
       body {
         margin: 0;
         padding: 0;
-        width: fit-content;
-        height: fit-content;
+        width: 100%;
+        height: auto;
         background: transparent;
         -webkit-app-region: no-drag;
+        overflow: hidden;
       }
 
   .command-tab {
@@ -26,7 +27,7 @@
         border-radius: 8px;
         display: flex;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         gap: 16px;
         padding: 0 12px;
         color: rgba(255, 255, 255, 0.9);
@@ -36,9 +37,8 @@
         flex-wrap: nowrap;
         overflow: visible;
         border: 1px solid rgba(255, 255, 255, 0.15);
-  width: 100%;
-  /* Allow horizontal collapse to approximately one icon's width */
-  min-width: 60px;
+        width: 100%;
+        box-sizing: border-box;
       }
 
       .command-item {
@@ -52,8 +52,9 @@
         cursor: pointer;
         transition: all 0.2s ease;
         -webkit-app-region: no-drag;
-  /* Allow items to shrink so the bar can collapse to one icon width */
-  flex-shrink: 1;
+  /* Prevent items from shrinking to ensure proper window measurement */
+  flex-shrink: 0;
+  white-space: nowrap;
       }
 
       .command-item:hover {
@@ -353,9 +354,9 @@
   </head>
   <body>
     <div class="command-tab">
-      <div class="command-item">
+      <div class="command-item" title="Screenshot (Alt+S or Ctrl+Shift+S)">
         <i class="fas fa-camera"></i>
-        <span>⌘⇧S</span>
+        <span>Alt+S</span>
       </div>
       <div class="command-separator"></div>
       <div class="command-item" id="micButton">
@@ -384,7 +385,18 @@
         <i class="fas fa-circle-info"></i>
       </div>
       <div class="command-separator"></div>
+      <div class="command-item" id="modelSelectorContainer">
+        <i class="fas fa-robot"></i>
+        <select id="modelSelector">
+          <option value="gemini-3.5-flash">Loading...</option>
+        </select>
+      </div>
+      <div class="command-separator"></div>
       <div class="status-dot non-interactive" id="statusDot"></div>
+      <div class="command-separator"></div>
+      <div class="command-item" id="closeButton" title="Close" style="color: #ef4444; cursor: pointer;">
+        <i class="fas fa-times"></i>
+      </div>
     </div>
 
   <!-- Shortcuts Popover (hidden by default via CSS) -->
@@ -404,6 +416,9 @@
             <td>
               <span class="kbd">Ctrl/Cmd</span>
               + <span class="kbd">Shift</span>
+              + <span class="kbd">S</span>
+              <span style="opacity:.7; margin:0 4px;">or</span>
+              <span class="kbd">Alt</span>
               + <span class="kbd">S</span>
             </td>
             <td>Capture screenshot and analyze</td>
