@@ -298,6 +298,10 @@ class LLMService {
   }
 
   formatImageInstruction(activeSkill, programmingLanguage) {
+    if (programmingLanguage === 'mcq' || programmingLanguage === 'assessment') {
+      const typeStr = programmingLanguage === 'mcq' ? 'Multiple Choice' : 'Assessment Question';
+      return `Analyze this image for a ${typeStr}. Extract the problem and respond with the least amount of words possible, only providing the answers. Do not include any explanations or unnecessary text.`;
+    }
     const langNote = programmingLanguage ? ` Use only ${programmingLanguage.toUpperCase()} for any code.` : '';
     return `Analyze this image for a ${activeSkill.toUpperCase()} question. Extract the problem concisely and provide the best possible solution with explanation and final code.${langNote}`;
   }
@@ -593,7 +597,7 @@ class LLMService {
 
     request.contents.push({
       role: 'user',
-      parts: [{ text: this.formatUserMessage(text, activeSkill) }]
+      parts: [{ text: this.formatUserMessage(text, activeSkill, programmingLanguage) }]
     });
 
     return request;
@@ -641,7 +645,7 @@ class LLMService {
     request.contents.push(...conversationContents);
 
     // Format and validate the current user input
-    const formattedMessage = this.formatUserMessage(text, activeSkill);
+    const formattedMessage = this.formatUserMessage(text, activeSkill, programmingLanguage);
     if (!formattedMessage || formattedMessage.trim().length === 0) {
       throw new Error('Failed to format user message or message is empty');
     }
@@ -779,6 +783,12 @@ class LLMService {
   }
 
   getIntelligentTranscriptionPrompt(activeSkill, programmingLanguage) {
+    const lang = String(programmingLanguage || '').toLowerCase();
+    if (lang === 'mcq' || lang === 'assessment') {
+      const typeStr = lang === 'mcq' ? 'Multiple Choice' : 'Assessment Question';
+      return `## QUESTION TYPE: ${typeStr}\nSTRICT REQUIREMENTS:\n- The user will provide a text of the problem.\n- Respond with the least amount of words possible, only providing the answers.\n- Do not include any explanations, reasoning, or unnecessary text.`;
+    }
+
     let prompt = `# Intelligent Transcription Response System
 
 Assume you are asked a question in ${activeSkill.toUpperCase()} mode. Your job is to intelligently respond to question/message with appropriate brevity.
@@ -834,7 +844,12 @@ Remember: Be intelligent about filtering - only provide detailed responses when 
     return prompt;
   }
 
-  formatUserMessage(text, activeSkill) {
+  formatUserMessage(text, activeSkill, programmingLanguage) {
+    const lang = String(programmingLanguage || '').toLowerCase();
+    if (lang === 'mcq' || lang === 'assessment') {
+      const typeStr = lang === 'mcq' ? 'Multiple Choice' : 'Assessment Question';
+      return `Context: ${typeStr} request\n\nText to analyze:\n${text}`;
+    }
     return `Context: ${activeSkill.toUpperCase()} analysis request\n\nText to analyze:\n${text}`;
   }
 

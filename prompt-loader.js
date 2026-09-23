@@ -78,9 +78,15 @@ class PromptLoader {
    * @returns {string} Modified prompt with programming language context
    */
   injectProgrammingLanguage(promptContent, programmingLanguage, skillName) {
+    const norm = (programmingLanguage || '').toLowerCase();
+    
+    if (norm === 'mcq' || norm === 'assessment') {
+      const typeStr = norm === 'mcq' ? 'Multiple Choice' : 'Assessment Question';
+      return `## QUESTION TYPE: ${typeStr}\nSTRICT REQUIREMENTS:\n- The user will provide a screenshot or text of the problem.\n- Respond with the least amount of words possible, only providing the answers.\n- Do not include any explanations, reasoning, or unnecessary text.`;
+    }
+
     const languageMap = { cpp: 'C++', c: 'C', python: 'Python', java: 'Java', javascript: 'JavaScript', js: 'JavaScript' };
     const fenceTagMap = { cpp: 'cpp', c: 'c', python: 'python', java: 'java', javascript: 'javascript', js: 'javascript' };
-    const norm = (programmingLanguage || '').toLowerCase();
     const languageTitle = languageMap[norm] || (programmingLanguage.charAt(0).toUpperCase() + programmingLanguage.slice(1));
     const fenceTag = fenceTagMap[norm] || norm || 'text';
     const languageUpper = (languageMap[norm] || languageTitle).toUpperCase();
